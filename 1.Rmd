@@ -1,0 +1,142 @@
+---
+title: "Project 1"
+author: "Prakkash Manohar, IIIT Sri City"
+date: "June 15, 2018"
+output: html_document
+---
+
+```{r}
+library(data.table)
+policy <- fread("RPT_POLICY_CHK4.csv")
+enquiry <- fread("RPT_ENQ_CHK4.csv")
+name <- fread("RPT_NAME_CHK4.csv")
+finance.details.1 <- fread("RPT_AR_CHK4_1.csv")
+finance.details.2 <- fread("RPT_AR_CHK4_2.csv")
+finance.details.3 <- fread("RPT_AR_CHK4_3.csv")
+```
+
+
+```{r}
+# View(policy)
+# View(name)
+# View(enquiry)
+#head(finance.details.1, 20)
+#head(finance.details.2, 20)
+#head(finance.details.3, 20)
+
+colSums(is.na(name))
+colSums(is.na(policy))
+colSums(is.na(enquiry))
+#colSums(is.na(finance.details))
+name.na <- which(is.na(name$GENDER))
+enquiry.na <- which(is.na(enquiry$INQ_PURP_CD_4IN))
+
+#str(name)
+#str(policy)
+#str(enquiry)
+#str(finance.details.1)
+
+length(unique(data.frame(table(finance.details.1$ACCT_TYPE_CD))$Var1))
+length(unique(data.frame(table(finance.details.2$ACCT_TYPE_CD))$Var1))
+length(unique(data.frame(table(finance.details.3$ACCT_TYPE_CD))$Var1))
+table(finance.details.2$ACCT_TYPE_CD)
+table(finance.details.3$ACCT_TYPE_CD)
+```
+
+```{r}
+library(lubridate)
+library(tidyr)
+
+#unique.name <- name[order(Account_Number)]
+#a <- all.equal(name, unique.name)
+unique.name <- length(unique(name$Account_Number))
+# answer for 1
+
+name1 <- name
+name1$DOB <- as.Date(name1$DOB, "%d-%m-%Y")
+a <- which(is.na(name1$DOB))
+dob <- name[a, "DOB"]
+#print(dob)
+dob <- as.Date(as.character(dob$DOB), format = "%d/%m/%Y")
+name1[which(is.na(DOB)), DOB := dob]
+name1[,DOB_original := DOB]
+name1 <- separate(data = name1,col = "DOB",into = c("year","month","day"))
+name1$month <- as.integer(name1$month)
+name1$day <- as.integer(name1$day)
+name1$year <- as.integer(name1$year)
+name1[,Month := month.abb[month]]
+setnames(name1,"DOB_original", "DOB")
+name2 <- name1[order(name1[,month]), c("Account_Number", "Month", "DOB")]
+# sorted MONTHWISE
+# answer for 2
+
+name3 <- name1[order(name1[,year], name1[,month], name1[,day]), c("Account_Number", "DOB")]
+# sorted calenderwise
+# answer for 3
+
+ans4.1 <- finance.details.1[,unique(PL_Lead), by = .(ACCT_TYPE_CD)]
+ans4.1 <- ans4.1[order(ACCT_TYPE_CD, V1)]
+setnames(ans4.1,"V1", "PL_Lead")
+ans4.2 <- finance.details.2[,unique(PL_Lead), by = .(ACCT_TYPE_CD)]
+ans4.2 <- ans4.2[order(ACCT_TYPE_CD, V1)]
+setnames(ans4.2,"V1", "PL_Lead")
+ans4.3 <- finance.details.3[,unique(PL_Lead), by = .(ACCT_TYPE_CD)]
+ans4.3 <- ans4.3[order(ACCT_TYPE_CD, V1)]
+setnames(ans4.3,"V1", "PL_Lead")
+
+ans4 <- rbind(ans4.1, ans4.2, ans4.3)
+ans4 <- ans4[, unique(PL_Lead), by = .(ACCT_TYPE_CD)]
+# answer for 4
+
+#sqldf("SELECT Account_Number FROM name WHERE PL_Lead NOT IN (SELECT ID FROM Table2)")
+
+setdiff(name$Account_Number, c(finance.details.1$PL_Lead,finance.details.2$PL_Lead, finance.details.3$PL_Lead))
+#finance.details.1[PL_Lead == 90198185]
+#finance.details.2[PL_Lead == 90198185]
+#finance.details.3[PL_Lead == 90198185]
+# answer for 5
+
+#str(finance.details.1)
+#finance.details.1[2, "CLOSED_DT"] != ""
+
+ans6.1 <- finance.details.1[OPEN_DT != "" & CLOSED_DT == "",.(.N, PL_Lead), by = .(ACCT_TYPE_CD)]
+ans6.1 <- ans6.1[order(ACCT_TYPE_CD, PL_Lead)]
+setnames(ans6.1,"N", "Groupwise Count")
+ans6.2 <- finance.details.2[OPEN_DT != "" & CLOSED_DT == "",.(.N, PL_Lead), by = .(ACCT_TYPE_CD)]
+ans6.2 <- ans6.2[order(ACCT_TYPE_CD, PL_Lead)]
+setnames(ans6.2,"N", "Groupwise Count")
+ans6.3 <- finance.details.3[OPEN_DT != "" & CLOSED_DT == "",.(.N, PL_Lead), by = .(ACCT_TYPE_CD)]
+ans6.3 <- ans6.3[order(ACCT_TYPE_CD, PL_Lead)]
+setnames(ans6.3,"N", "Groupwise Count")
+
+ans6 <- rbind(ans6.1, ans6.2, ans6.3)
+ans6 <- ans6[,.(.N, PL_Lead), by = .(ACCT_TYPE_CD)]
+ans6 <- ans6[order(ACCT_TYPE_CD, PL_Lead)]
+# answer for 6
+
+ans7.1 <- finance.details.1[OPEN_DT != "" & CLOSED_DT == "",.(.N, PL_Lead),]
+count1 <- ans7.1[1,"N"]
+ans7.1[,"N" := NULL]
+ans7.2 <- finance.details.2[OPEN_DT != "" & CLOSED_DT == "",.(.N, PL_Lead),]
+count2 <- ans7.2[1,"N"]
+ans7.2[,"N" := NULL]
+ans7.3 <- finance.details.3[OPEN_DT != "" & CLOSED_DT == "",.(.N, PL_Lead),]
+count3 <- ans7.3[1,"N"]
+ans7.3[,"N" := NULL]
+
+ans7 <- rbind(ans7.1, ans7.2, ans7.3)
+ans7[,"Total Count" := count1+count2+count3]
+# answer for 7
+```
+
+```{r}
+options(java.parameters = "-Xmx4000m")
+library(xlsx)
+write.xlsx2(name2, file = "Set04-20180611T080518Z-001-Prakkash_Manohar-IIITS.xlsx",
+        sheetName="2", col.names=TRUE, row.names=FALSE, append=TRUE)
+write.table(name2, file = "Set04-20180611T080518Z-001-Prakkash_Manohar-IIITS.xlsx", col.names=TRUE, row.names=FALSE)
+write.csv(ans7, file = "results.csv", row.names=FALSE)
+
+
+
+```
