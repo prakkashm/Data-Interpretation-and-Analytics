@@ -1,0 +1,174 @@
+---
+title: "Project 2"
+author: "Prakkash Manohar, IIIT Sri City"
+date: "June 23, 2018"
+output: html_document
+---
+
+```{r}
+library(data.table)
+policy <- fread("../Project 1/Set04-20180611T080518Z-001/Set04/RPT_POLICY_CHK4.csv")
+enquiry <- fread("../Project 1/Set04-20180611T080518Z-001/Set04/RPT_ENQ_CHK4.csv")
+name <- fread("../Project 1/Set04-20180611T080518Z-001/Set04/RPT_NAME_CHK4.csv")
+finance.details.1 <- fread("../Project 1/Set04-20180611T080518Z-001/Set04/RPT_AR_CHK4_1.csv")
+finance.details.2 <- fread("../Project 1/Set04-20180611T080518Z-001/Set04/RPT_AR_CHK4_2.csv")
+finance.details.3 <- fread("../Project 1/Set04-20180611T080518Z-001/Set04/RPT_AR_CHK4_3.csv")
+```
+
+```{r}
+#print(finance.details.1[is.na(finance.details.1$CLOSED_DT)])
+home.loan.details.1 <- finance.details.1[finance.details.1$ACCT_TYPE_CD == 58 & finance.details.1$CLOSED_DT == ""]
+home.loan.details.2 <- finance.details.2[finance.details.2$ACCT_TYPE_CD == 58 & finance.details.2$CLOSED_DT == ""]
+home.loan.details.3 <- finance.details.3[finance.details.3$ACCT_TYPE_CD == 58 & finance.details.3$CLOSED_DT == ""]
+
+# home.loan.details <- rbind(home.loan.details.1, home.loan.details.2, home.loan.details.3)
+# str(home.loan.details.1)
+# str(home.loan.details.2)
+# str(home.loan.details.3)
+# class(home.loan.details.2$CREDIT_LIMIT_AM)
+
+personal.loan.codes <- c(189, 47, 130, 173, 221, 195, 185)
+personal.loan.details.1 <- finance.details.1[finance.details.1$ACCT_TYPE_CD %in% personal.loan.codes & finance.details.1$CLOSED_DT == ""]
+personal.loan.details.2 <- finance.details.2[finance.details.2$ACCT_TYPE_CD %in% personal.loan.codes & finance.details.2$CLOSED_DT == ""]
+personal.loan.details.3 <- finance.details.3[finance.details.3$ACCT_TYPE_CD %in% personal.loan.codes & finance.details.3$CLOSED_DT == ""]
+```
+
+```{r}
+difference <- c()
+difference1 <- c()
+i <- 1
+while(i <= 23){
+  if(i <= 9)
+  col1 <- paste("BALANCE_AM_0", i, sep = "")
+  else
+  col1 <- paste("BALANCE_AM_", i, sep = "")
+  
+  if(i <= 8)
+  col2 <- paste("BALANCE_AM_0", i+1, sep = "")
+  else
+  col2 <- paste("BALANCE_AM_", i+1, sep = "")
+  
+  #print(paste(col1))
+  difference <- c(difference, home.loan.details.1[365, get(col1)] - home.loan.details.1[365, get(col2)])
+ 
+   i <- i+1
+}
+print(difference)
+  
+i <- 1
+while(i <= 23){  
+  if(i <= 9)
+  col1 <- paste("PAST_DUE_AM_0", i, sep = "")
+  else
+  col1 <- paste("PAST_DUE_AM_", i, sep = "")
+  
+  if(i <= 8)
+  col2 <- paste("PAST_DUE_AM_0", i+1, sep = "")
+  else
+  col2 <- paste("PAST_DUE_AM_", i+1, sep = "")
+  
+  difference1 <- c(difference1, home.loan.details.1[379, get(col1)] - home.loan.details.1[379, get(col2)])
+  
+  i <- i+1
+}
+
+print(difference1)
+
+all.details.available <- c()
+#plot(1:24, home.loan.details.1[1, BALANCE_AM_01:BALANCE_AM_24])
+for(i in 1:1000){
+  if(length(which(is.na(as.list(home.loan.details.1[i, ACTUAL_PAYMENT_AM_01:BALANCE_AM_24])))) == 0 & length(which(is.na(as.list(home.loan.details.1[i, PAST_DUE_AM_01:PAST_DUE_AM_24])))) == 0)
+    print(i)
+  #print(sub.table)
+  #if(is.na(sub.table) == FALSE)
+  #  all.details.available <- c(all.details.available, i)
+}
+print(as.list(home.loan.details.1[9, ACTUAL_PAYMENT_AM_01:PAST_DUE_AM_24]))
+#print(home.loan.details.1[1, 48])
+```
+
+```{r}
+# # THIS CODE WAS NOT USED (INEFFICIENT APPROACH AHEAD)
+# library(tidyverse)
+# options(scipen = 999)
+# interest.table <- tibble("PL_Lead" = integer(), "ACCT_TYPE_CD" = integer(), "INTEREST_RATE" = double())
+# #colnames(interest.table) <- c("PL_Lead", "ACCT_TYPE_CD", "INTEREST_RATE", "LAST_PAYMENT_DT", "AS_OF_MONTH")
+# 
+# for(i in 1:nrow(home.loan.details.1)){
+#   str <- ""
+#   for(j in 1:23){
+#     if(j <= 9){
+#       col1 <- paste("ACTUAL_PAYMENT_AM_0", j, sep = "")
+#       col2 <- paste("BALANCE_AM_0", j, sep = "")
+#     }
+#     else{
+#       col1 <- paste("ACTUAL_PAYMENT_AM_", j, sep = "")
+#       col2 <- paste("BALANCE_AM_", j, sep = "")
+#     }
+#   
+#     if(j <= 8)
+#     col3 <- paste("BALANCE_AM_0", j+1, sep = "")
+#     else
+#     col3 <- paste("BALANCE_AM_", j+1, sep = "")
+#     
+#     p <- home.loan.details.1[i, get(col1)]
+#     b <- home.loan.details.1[i, get(col2)]
+#     b1 <- home.loan.details.1[i, get(col3)]
+#     #print(paste(p,b,b1, i,j, sep = " "))
+#     if(is.na(p) == FALSE & is.na(b) == FALSE & is.na(b1) == FALSE & p > 0 & b >= 0 & b1 > 0 & p - b1 + b > 0 & p - b1 + b < 100){
+#       interest <- p - b1 + b
+#       r <- interest/b1*100
+#       r <- round(r, 2)
+#       #str <- paste(round(r, 2), "%", sep = "")
+#       #print(c(home.loan.details.1[i, PL_Lead], home.loan.details.1[i, ACCT_TYPE_CD], r))
+#       interest.table <- rbind(interest.table, c(home.loan.details.1[i, PL_Lead], home.loan.details.1[i, ACCT_TYPE_CD], r))
+#       #interest.table[i][j] <- r#c(row1, r)
+#       break
+#     }
+#     # else
+#     #   str <- paste(str,NA, sep = " ")
+#       #interest.table[i][j] <- NA#c(row1, NA)
+#   }
+#   # if(str == "")
+#   #   print(NA)
+#   # else
+#   #   print(str, quote = FALSE)
+#   #interest.table <- list(interest.table, row1)
+# }
+# 
+# names(interest.table) <- c("PL_Lead", "ACCT_TYPE_CD", "INTEREST_RATE (%)")
+# # THIS CODE WAS NOT USED
+```
+
+```{r}
+options(scipen = 999)
+interest.table <- personal.loan.details.3[, ACTUAL_PAYMENT_AM_01:ACTUAL_PAYMENT_AM_23] - personal.loan.details.3[, BALANCE_AM_02:BALANCE_AM_24] + personal.loan.details.3[, BALANCE_AM_01: BALANCE_AM_23]
+interest.table <- interest.table/personal.loan.details.3[, BALANCE_AM_02:BALANCE_AM_24] * 100
+interest.table[,"PL_Lead" := personal.loan.details.3[,PL_Lead]]
+interest.table[,"ACCT_TYPE_CD" := personal.loan.details.3[,ACCT_TYPE_CD]]
+interest.table[,"INTEREST_RATE" := 0]
+setcolorder(interest.table, c(24, 25, 26, 1:23))
+
+a <- c()
+flag <- 1
+for(i in 1:nrow(interest.table)){
+  for(j in 4:26){
+    if(is.na(interest.table[[j]][i]) == FALSE & interest.table[[j]][i] > 0 & interest.table[[j]][i] < 100){
+      a <- c(a, interest.table[[j]][i])
+      flag <- 0
+      break
+    }
+    else
+      flag <- 1
+  }
+  if(flag == 1){
+    a <- c(a, NA)
+  }
+}
+
+interest.table[, "INTEREST_RATE" := round(a, 2)]
+interest.table[,4:26 := NULL]
+interest.table <- interest.table[!is.na(INTEREST_RATE)]
+setnames(interest.table, "INTEREST_RATE", "INTEREST_RATE (in %)")
+write.csv(interest.table, file = "2.csv", row.names=FALSE, append = TRUE)
+```
